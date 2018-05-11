@@ -36,30 +36,16 @@ class MainActivity : AppCompatActivity() {
         rv.adapter = adapter
         rv.layoutManager = LinearLayoutManager(applicationContext)
 
+
         shimmerContainer.startShimmerAnimation()
-
-
-        ref.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                // This method is called once with the initial value and again
-                // whenever data at this location is updated.
-
-                for (snapshot in dataSnapshot.children){
-                    val value = snapshot.getValue(NoteClass::class.java)
-                    if (value !=null){
-                        notes.add(value)
-                    }
-                }
-                adapter.notifyDataSetChanged()
-                shimmerContainer.stopShimmerAnimation()
-                shimmerContainer.visibility = View.GONE
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                // Failed to read value
-                Log.i("Halooo", "Failed to read value.", error.toException())
-            }
-        })
+        load()
+        swpRefresh.setOnRefreshListener {
+            // Kalo Refresh ngapain
+            shimmerContainer.startShimmerAnimation()
+            notes.clear()
+            adapter.notifyDataSetChanged()
+            load()
+        }
 
         Toast.makeText(applicationContext, mAuth.uid + "\n" + mAuth.currentUser?.email, Toast.LENGTH_LONG).show()
         btnLogout.setOnClickListener {
@@ -72,5 +58,31 @@ class MainActivity : AppCompatActivity() {
 
             ref.push().setValue(note)
         }
+    }
+
+    fun load(){
+
+        ref.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                // This method is called once with the initial value and again
+                // whenever data at this location is updated.
+                notes.clear()
+                for (snapshot in dataSnapshot.children){
+                    val value = snapshot.getValue(NoteClass::class.java)
+                    if (value !=null){
+                        notes.add(value)
+                    }
+                }
+                adapter.notifyDataSetChanged()
+                shimmerContainer.stopShimmerAnimation()
+                shimmerContainer.visibility = View.GONE
+                 swpRefresh.isRefreshing = false
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // Failed to read value
+                Log.i("Halooo", "Failed to read value.", error.toException())
+            }
+        })
     }
 }
